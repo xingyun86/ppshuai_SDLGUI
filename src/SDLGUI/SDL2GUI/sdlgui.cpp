@@ -3,13 +3,18 @@
 
 #include "sdlgui.h"
 
+#include <thread>
+
 #include <SDL.h>
+#include <SDL_gif.h>
 #include <SDL_ttf.h>
 #include <SDL_net.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 
 using namespace std;
+
+#define RES_PREFIX "res/"
 
 #ifdef main
 #undef main
@@ -35,6 +40,16 @@ int main(int argc, char* argv[])
 
 	int quit = 0;
 	SDL_Event evt;
+	Uint32 tickStart = 0;
+	Uint32 tickEnd = 0;
+
+	////////////////////////////////////////////////////////////////
+	Uint64 nFrequency, nPrevCounter, nCurrCounter, nElapsedCounter;
+	float elapsed = 0.0f, totalTime = 0.0f;
+	int fps = 0, fpsCount = 0;
+
+	nFrequency = SDL_GetPerformanceFrequency();
+	nPrevCounter = SDL_GetPerformanceCounter();
 
 	SDLNet_Init();
 	TTF_Init();
@@ -47,22 +62,19 @@ int main(int argc, char* argv[])
 		printf("Mix_OpenAudio: %s\n", Mix_GetError());
 		exit(2);
 	}
-	Mix_Music* music = Mix_LoadMUS("mp3/classic.mp3");
-	Mix_Music* music1 = Mix_LoadMUS("mp3/luozi.mp3");
+	Mix_Music* music = Mix_LoadMUS(RES_PREFIX "mp3/classic.mp3");
+	Mix_Music* music1 = Mix_LoadMUS(RES_PREFIX "mp3/luozi.mp3");
 	Mix_VolumeMusic(30);
 	Mix_PlayMusic(music, -1);
 	//加载声效
-	Mix_Chunk * chunk1 = Mix_LoadWAV("wav/Alarm01.wav");
-	Mix_Chunk * chunk2 = Mix_LoadWAV("wav/Alarm02.wav");
+	Mix_Chunk * chunk1 = Mix_LoadWAV(RES_PREFIX "wav/Alarm01.wav");
+	Mix_Chunk * chunk2 = Mix_LoadWAV(RES_PREFIX "wav/Alarm02.wav");
 	Mix_AllocateChannels(2);
 
-	////////////////////////////////////////////////////////////////
-	Uint64 nFrequency, nPrevCounter, nCurrCounter, nElapsedCounter;
-	float elapsed = 0.0f, totalTime = 0.0f;
-	int fps = 0, fpsCount = 0;
-
-	nFrequency = SDL_GetPerformanceFrequency();
-	nPrevCounter = SDL_GetPerformanceCounter();
+	Uint16 i = 0;
+	GIF_Image* gif = GIF_LoadImage(RES_PREFIX "gif/welcome2.gif");
+	
+	SDL_Rect dstRect = { 0,0,0,0 };
 
 	while (!quit) {
 		if (SDL_PollEvent(&evt)) {
@@ -82,71 +94,81 @@ int main(int argc, char* argv[])
 			}
 		}
 		else {
+			nCurrCounter = SDL_GetPerformanceCounter();
+			nElapsedCounter = nCurrCounter - nPrevCounter;
+			nPrevCounter = nCurrCounter;
+
+			//前后两帧的耗时(ms)
+			elapsed = (nElapsedCounter * 1000.0f) / nFrequency;
+
 			//清除背景
 			SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255);
 			SDL_RenderClear(pRenderer);
 
 			//TODO:渲染图像
 
-			{
+			/*{
 				SDL_Surface* bmp = SDL_LoadBMP("test.bmp");
 				SDL_Texture* text = SDL_CreateTextureFromSurface(pRenderer, bmp);
-				SDL_RenderCopy(pRenderer, text, NULL, NULL);
+				dstRect.x = 0, dstRect.y = 0, dstRect.w = bmp->w, dstRect.h = bmp->h;
+				SDL_RenderCopy(pRenderer, text, NULL, &dstRect);
 				SDL_FreeSurface(bmp);
 				SDL_DestroyTexture(text);
-			}
+			}*/
 			{
-				SDL_Surface* png = IMG_Load("test.png");
+				SDL_Surface* png = IMG_Load(RES_PREFIX "img/test.png");
 				SDL_Texture* text = SDL_CreateTextureFromSurface(pRenderer, png);
-				SDL_RenderCopy(pRenderer, text, NULL, NULL);
+				dstRect.x = 0, dstRect.y = 0, dstRect.w = png->w, dstRect.h = png->h;
+				SDL_RenderCopy(pRenderer, text, NULL, &dstRect);
 				SDL_FreeSurface(png);
 				SDL_DestroyTexture(text);
 			}
 
 			{
 				SDL_Color color = { 255, 255, 255, 255 };
-				TTF_Font* font = TTF_OpenFont("simsun.ttf", 9);
-				SDL_Surface* surf = TTF_RenderText_Blended(font, "are you OK ?", color);
+				TTF_Font* font = TTF_OpenFont(RES_PREFIX "font/simsun.ttf", 18);
+				SDL_Surface* surf = TTF_RenderText_Blended(font, "Are you OK ?", color);
 				SDL_Texture* ftex = SDL_CreateTextureFromSurface(pRenderer, surf);
-				SDL_RenderCopy(pRenderer, ftex, NULL, NULL);
+				dstRect.x = 0, dstRect.y = 300, dstRect.w = surf->w, dstRect.h = surf->h;
+				SDL_RenderCopy(pRenderer, ftex, NULL, &dstRect);
 				SDL_FreeSurface(surf);
 				SDL_DestroyTexture(ftex);
 			}
+			if (i == 0 || (i > 0 && (SDL_GetTicks() - tickStart) >= gif->frames[i]->delay))
 			{
-				nCurrCounter = SDL_GetPerformanceCounter();
-				nElapsedCounter = nCurrCounter - nPrevCounter;
-				nPrevCounter = nCurrCounter;
-
-				//前后两帧的耗时(ms)
-				elapsed = (nElapsedCounter * 1000.0f) / nFrequency;
-
-				//清除背景
-				SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255);
-				SDL_RenderClear(pRenderer);
-
-				//TODO: 绘制其它
-
-				//显示图像
+				SDL_Texture* texture = SDL_CreateTextureFromSurface(pRenderer, gif->frames[i]->surface);
+				dstRect.x = 200, dstRect.y = 0, dstRect.w = gif->frames[i]->surface->w, dstRect.h = gif->frames[i]->surface->h;
+				SDL_RenderCopy(pRenderer, texture, NULL, &dstRect);
 				SDL_RenderPresent(pRenderer);
-
-
-				totalTime += elapsed;
-				//已经过了 1 秒
-				if (totalTime > 1000.0f) {
-					totalTime -= 1000.0f;
-					fps = fpsCount;
-					fpsCount = 1;
-
-					SDL_Log("%d\n", fps);
-
-				}
-				else {
-					fpsCount++;
-				}
+				SDL_DestroyTexture(texture);
+				tickStart = SDL_GetTicks();
+				//SDL_Delay(gif->frames[i]->delay);
+				i = (i + 1) % gif->num_frames;
 			}
+			else
+			{
+				SDL_Texture* texture = SDL_CreateTextureFromSurface(pRenderer, gif->frames[i]->surface);
+				dstRect.x = 200, dstRect.y = 0, dstRect.w = gif->frames[i]->surface->w, dstRect.h = gif->frames[i]->surface->h;
+				SDL_RenderCopy(pRenderer, texture, NULL, &dstRect);
+				SDL_RenderPresent(pRenderer);
+				SDL_DestroyTexture(texture);
+			}
+
 			//显示图像
 			SDL_RenderPresent(pRenderer);
 
+			totalTime += elapsed;
+			//已经过了 1 秒
+			if (totalTime > 1000.0f) {
+				totalTime -= 1000.0f;
+				fps = fpsCount;
+				fpsCount = 1;
+
+				SDL_Log("%d\n", fps);
+			}
+			else {
+				fpsCount++;
+			}
 		}
 	}
 

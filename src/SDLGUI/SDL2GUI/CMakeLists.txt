@@ -9,7 +9,10 @@ include_directories(
 	${CMAKE_SOURCE_DIR}
 	${CMAKE_BINARY_DIR}
 	${CMAKE_SOURCE_DIR}/SDL2
+	${CMAKE_SOURCE_DIR}/SDL2/include
 	${CMAKE_BINARY_DIR}/SDL2
+	${CMAKE_SOURCE_DIR}/SDL2_gif
+	${CMAKE_BINARY_DIR}/SDL2_gif
 	${CMAKE_SOURCE_DIR}/SDL2_ttf
 	${CMAKE_BINARY_DIR}/SDL2_ttf
 	${CMAKE_SOURCE_DIR}/SDL2_net
@@ -29,6 +32,7 @@ include_directories(
 )
 link_directories(
 	${CMAKE_BINARY_DIR}/SDL2
+	${CMAKE_BINARY_DIR}/SDL2_gif
 	${CMAKE_BINARY_DIR}/SDL2_ttf
 	${CMAKE_BINARY_DIR}/SDL2_net
 	${CMAKE_BINARY_DIR}/SDL2_image
@@ -74,9 +78,10 @@ endif(MSVC)
 
 target_link_libraries(sdl2gui 
 	SDL2_static 
+	SDL2_gif
 	SDL2_ttf 
 	SDL2_net 
-	SDL2_image 
+	SDL2_image  
 	SDL2_mixer
 	mpg123
 	modplug
