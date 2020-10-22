@@ -2,9 +2,10 @@
 #ifndef BASE_CRITICALSECTION_H__
 #define BASE_CRITICALSECTION_H__
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #include <windows.h>
 #else
+#include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
 #endif
@@ -21,7 +22,7 @@
 
 namespace base {
 
-#ifdef WIN32
+#ifdef _MSC_VER
     class CriticalSection {
     public:
         CriticalSection() {

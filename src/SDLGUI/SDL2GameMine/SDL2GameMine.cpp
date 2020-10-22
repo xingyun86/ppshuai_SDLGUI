@@ -16,10 +16,10 @@ int main(int argc, char* argv[])
 
 #if defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_mixer.h>
+#include <SDL.h>
+#include <SDL_image.h>
+#include <SDL_ttf.h>
+#include <SDL_mixer.h>
 
 #else
 

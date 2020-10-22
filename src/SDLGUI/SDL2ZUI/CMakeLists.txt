@@ -114,6 +114,7 @@ if (MSVC)
 else()
     set(CMAKE_C_FLAGS "$ENV{CFLAGS} ${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} ${CMAKE_CXX_FLAGS} -fPIC")
+	list(APPEND EXT_LIB pthread dl)
 endif(MSVC)
 
 target_link_libraries(sdl2zui 
