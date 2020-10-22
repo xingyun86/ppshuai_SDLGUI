@@ -63,19 +63,19 @@ namespace base {
         }
         void Enter() {
             pthread_mutex_lock(&mutex_); 
-            TRACK_OWNER(thread_ = gettid());
+            TRACK_OWNER(thread_ = pthread_self());
         }
         void Leave() {
             TRACK_OWNER(thread_ = 0);
             pthread_mutex_unlock(&mutex_);
         }
 //#if CS_TRACK_OWNER
-        bool CurrentThreadIsOwner() const { return thread_ == gettid(); }
+        bool CurrentThreadIsOwner() const { return thread_ == pthread_self(); }
 //#endif  // CS_TRACK_OWNER
 
     private:
         pthread_mutex_t mutex_;
-        TRACK_OWNER(pid_t thread_);  // The section's owning thread id
+        TRACK_OWNER(pthread_t thread_);  // The section's owning thread id
     };
 #endif // WIN32
 
